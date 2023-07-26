@@ -1,7 +1,9 @@
 "use client";
 
 import axios from "axios";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { UserCard } from "@/components/UserCard";
+import { cleanUser } from "@/libs/cleanUser";
 
 export default function RandomUserPage() {
   //user = null or array of object
@@ -9,16 +11,25 @@ export default function RandomUserPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [genAmount, setGenAmount] = useState(1);
 
+  useEffect(() => {
+    const savedGenAmount = localStorage.getItem("genAmount");
+    if (savedGenAmount !== null) {
+      setGenAmount(Number(savedGenAmount));
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem("genAmount", genAmount);
+  }, [genAmount]);
+
   const generateBtnOnClick = async () => {
     setIsLoading(true);
     const resp = await axios.get(
       `https://randomuser.me/api/?results=${genAmount}`
     );
     setIsLoading(false);
-    const users = resp.data.results;
-    //Your code here
-    //Process result from api response with map function. Tips use function from /src/libs/cleanUser
-    //Then update state with function : setUsers(...)
+    const users = resp.data.results.map((user) => cleanUser(user));
+    setUsers(users);
   };
 
   return (
@@ -40,7 +51,17 @@ export default function RandomUserPage() {
       {isLoading && (
         <p className="display-6 text-center fst-italic my-4">Loading ...</p>
       )}
-      {users && !isLoading && users.map(/*code map rendering UserCard here */)}
+      {users &&
+        !isLoading &&
+        users.map((user, index) => (
+          <UserCard
+            key={index}
+            name={user.name}
+            email={user.email}
+            imgUrl={user.imgUrl}
+            address={user.address}
+          />
+        ))}
     </div>
   );
 }
